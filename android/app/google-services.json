@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "461996496403",
+    "firebase_url": "https://ygohtournaments.firebaseio.com",
+    "project_id": "ygohtournaments",
+    "storage_bucket": "ygohtournaments.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461996496403:android:472ba3119b637fef",
+        "android_client_info": {
+          "package_name": "site.clubygohio.ygohtournaments"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "461996496403-i4sftm6mfd448j7uacocfenjoba3j4o1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD_5IOKCYmnL0gp3am0r4W85tgoHkKQ1w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
