@@ -47,9 +47,15 @@ class _AddMemberScreenState extends State<AddMembersScreen> {
             leading: const Icon(Icons.person),
             title:
               TextFormField(
+                textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
                   hintText: 'Ryan Arnold',
                   labelText: 'Member Name',
+                  labelStyle: TextStyle(color: Colors.white),
+                  focusedBorder: UnderlineInputBorder(
+                      borderRadius: BorderRadius.zero,
+                      borderSide: BorderSide(color: Colors.white),
+                  ),
                 ),
                 validator: (value) {
                   if (value.isEmpty) {

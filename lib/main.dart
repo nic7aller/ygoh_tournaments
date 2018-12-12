@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splashscreen/splashscreen.dart';
+import 'package:ygoh_tournaments/account.dart';
 import 'package:ygoh_tournaments/addMembers.dart';
+import 'package:ygoh_tournaments/login.dart';
 
 void main() => runApp(new MyApp());
 
@@ -10,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-      title: 'Flutter Demo',
+      title: 'ClubYGOHIO Tournaments',
       theme: new ThemeData(
         // This is the theme of your application.
         //
@@ -35,11 +38,29 @@ class MySplashScreen extends StatefulWidget {
 }
 
 class _MySplashScreenState extends State<MySplashScreen> {
+  Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  StatefulWidget _afterSplash = new LoginScreen();
+
+  _isLoggedIn() async {
+    final SharedPreferences prefs = await _prefs;
+    String admin = prefs.getString('admin_user');
+    if (admin != null) {
+      setState(() {
+        _afterSplash = new MyHomePage(user: admin);
+      });
+    } else {
+      setState(() {
+        _afterSplash = new LoginScreen(prefs: prefs);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _isLoggedIn();
     return new SplashScreen(
       seconds: 3,
-      navigateAfterSeconds: new MyHomePage(title: 'Flutter Demo Home Page'),
+      navigateAfterSeconds: _afterSplash,
       title: new Text('We have been expecting you',
         style: new TextStyle(
             fontWeight: FontWeight.bold,
@@ -50,25 +71,15 @@ class _MySplashScreenState extends State<MySplashScreen> {
       backgroundColor: Colors.grey[900],
       styleTextUnderTheLoader: new TextStyle(color: Colors.white),
       photoSize: 100.0,
-      onClick: ()=>print("Flutter Egypt"),
       loaderColor: Colors.red,
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key key, this.user}) : super(key: key);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  String user;
 
   @override
   _MyHomePageState createState() => new _MyHomePageState();
@@ -82,6 +93,17 @@ class _MyHomePageState extends State<MyHomePage> {
     Text('Last one, good user'),
   ];
 
+  _navigateAndUpdateUser(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AccountScreen(user: widget.user)),
+    );
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      widget.user = prefs.getString('admin_user');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -94,7 +116,14 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: new Text(widget.title),
+        title: new Text('Welcome ' + widget.user),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.account_circle),
+            tooltip: 'Account Management',
+            onPressed: () {_navigateAndUpdateUser(context); },
+          ),
+        ],
       ),
       body: new Center(
         // Center is a layout widget. It takes a single child and positions it
