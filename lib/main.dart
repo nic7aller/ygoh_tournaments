@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:splashscreen/splashscreen.dart';
+import 'package:ygoh_tournaments/addMembers.dart';
 
 void main() => runApp(new MyApp());
 
@@ -18,9 +20,38 @@ class MyApp extends StatelessWidget {
         // "hot reload" (press "r" in the console where you ran "flutter run",
         // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
         // counter didn't reset back to zero; the application is not restarted.
-        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        primaryColor: Colors.grey[900],
+        accentColor: Colors.black,
       ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      home: new MySplashScreen(),
+    );
+  }
+}
+
+class MySplashScreen extends StatefulWidget {
+  @override
+  _MySplashScreenState createState() => new _MySplashScreenState();
+}
+
+class _MySplashScreenState extends State<MySplashScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return new SplashScreen(
+      seconds: 3,
+      navigateAfterSeconds: new MyHomePage(title: 'Flutter Demo Home Page'),
+      title: new Text('We have been expecting you',
+        style: new TextStyle(
+            fontWeight: FontWeight.bold,
+            fontStyle: FontStyle.italic,
+            fontSize: 20.0
+        ),),
+      image: new Image.network('https://picsum.photos/400/400/?random'),
+      backgroundColor: Colors.grey[900],
+      styleTextUnderTheLoader: new TextStyle(color: Colors.white),
+      photoSize: 100.0,
+      onClick: ()=>print("Flutter Egypt"),
+      loaderColor: Colors.red,
     );
   }
 }
@@ -44,18 +75,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  int _selectedIndex = 0;
+  final _widgetOptions = [
+    Text('Here is the main page, good user'),
+    Text('Just another page, good user'),
+    Text('Last one, good user'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -90,21 +115,43 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            new Text(
-              'You have pushed the button this many times:',
-            ),
-            new Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
+            _widgetOptions.elementAt(_selectedIndex),
           ],
         ),
       ),
       floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => AddMembersScreen()),
+        ),
+        tooltip: 'Add Member',
         child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              title: Text('Home')
+          ),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.child_care),
+              title: Text('Child\'s Game')
+          ),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.school),
+              title: Text('School')
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        fixedColor: Colors.red[900],
+        onTap: _onItemTapped,
+      ),// This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 }
