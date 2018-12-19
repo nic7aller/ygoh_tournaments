@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splashscreen/splashscreen.dart';
 import 'package:ygoh_tournaments/account.dart';
@@ -15,14 +14,6 @@ class MyApp extends StatelessWidget {
     return new MaterialApp(
       title: 'ClubYGOHIO Tournaments',
       theme: new ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
-        // counter didn't reset back to zero; the application is not restarted.
         brightness: Brightness.dark,
         primaryColor: Colors.grey[900],
         accentColor: Colors.black,
@@ -43,10 +34,11 @@ class _MySplashScreenState extends State<MySplashScreen> {
 
   _isLoggedIn() async {
     final SharedPreferences prefs = await _prefs;
-    String admin = prefs.getString('admin_user');
-    if (admin != null) {
+    String user = prefs.getString('current_user');
+    bool admin = prefs.getBool('admin_status');
+    if (user != null) {
       setState(() {
-        _afterSplash = new MyHomePage(user: admin);
+        _afterSplash = new MyHomePage(user: user, admin: admin);
       });
     } else {
       setState(() {
@@ -77,9 +69,10 @@ class _MySplashScreenState extends State<MySplashScreen> {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.user}) : super(key: key);
+  MyHomePage({Key key, this.user, this.admin}) : super(key: key);
 
   String user;
+  bool admin;
 
   @override
   _MyHomePageState createState() => new _MyHomePageState();
@@ -87,21 +80,42 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _widgetOptions = [
     Text('Here is the main page, good user'),
     Text('Just another page, good user'),
-    Text('Last one, good user'),
+    Text('THE FINAL PAGE'),
+  ];
+  final _alignmentOptions = [
+    MainAxisAlignment.center,
+    MainAxisAlignment.center,
+    MainAxisAlignment.start,
   ];
 
   _navigateAndUpdateUser(BuildContext context) async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AccountScreen(user: widget.user)),
     );
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      widget.user = prefs.getString('admin_user');
+      widget.user = prefs.getString('current_user');
     });
+  }
+
+  Widget _fabForAdmins() {
+    if (widget.admin) {
+      return new FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => AddUsersScreen()),
+        ),
+        tooltip: 'Add Member',
+        child: new Icon(Icons.add),
+      );
+    } else {
+      return Container();
+    }
   }
 
   @override
@@ -113,49 +127,26 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return new Scaffold(
+      key: _scaffoldKey,
       appBar: new AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: new Text('Welcome ' + widget.user),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.account_circle),
             tooltip: 'Account Management',
-            onPressed: () {_navigateAndUpdateUser(context); },
+            onPressed: () { _navigateAndUpdateUser(context); },
           ),
         ],
       ),
       body: new Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: new Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug paint" (press "p" in the console where you ran
-          // "flutter run", or select "Toggle Debug Paint" from the Flutter tool
-          // window in IntelliJ) to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: _alignmentOptions.elementAt(_selectedIndex),
           children: <Widget>[
             _widgetOptions.elementAt(_selectedIndex),
           ],
         ),
       ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => AddMembersScreen()),
-        ),
-        tooltip: 'Add Member',
-        child: new Icon(Icons.add),
-      ),
+      floatingActionButton: _fabForAdmins(),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -167,8 +158,8 @@ class _MyHomePageState extends State<MyHomePage> {
               title: Text('Child\'s Game')
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.school),
-              title: Text('School')
+              icon: Icon(Icons.group),
+              title: Text('Members')
           ),
         ],
         currentIndex: _selectedIndex,

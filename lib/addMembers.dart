@@ -1,30 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AddMembersScreen extends StatefulWidget {
+class AddUsersScreen extends StatefulWidget {
   @override
-  _AddMemberScreenState createState() => new _AddMemberScreenState();
+  _AddUserScreenState createState() => new _AddUserScreenState();
 }
 
-class _AddMemberScreenState extends State<AddMembersScreen> {
+class _AddUserScreenState extends State<AddUsersScreen> {
 
   final _controller = new TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _termsChecked = false;
 
-  void _onFormSubmit() {
+  _onFormSubmit() async {
     // Validate will return true if the form is valid, or false if
     // the form is invalid.
     if (_formKey.currentState.validate()) {
       String name = _controller.text;
       _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Adding ' + name)));
-      _addMember(name);
+      String snackMessage = await _addUser(name, _termsChecked );
+      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(snackMessage)));
     }
   }
 
-  void _addMember(String memberName) {
-    Firestore.instance.collection('members').document(memberName)
-        .setData({ 'score': 0 });
+  _addUser(String name, bool isAdmin) async {
+    String message = name + ' is now a user';
+    await Firestore.instance.collection('users')
+        .add({
+          'name': name,
+          'password': 'password',
+          'admin': isAdmin,
+          'score': 0
+        })
+        .catchError((e) {
+          message = 'User could not be added';
+        }
+    );
+    return message;
   }
 
   @override
@@ -37,7 +50,7 @@ class _AddMemberScreenState extends State<AddMembersScreen> {
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: new Text("Add Members"),
+        title: new Text("Add Users"),
       ),
       body: Form(
         key: _formKey,
@@ -65,12 +78,18 @@ class _AddMemberScreenState extends State<AddMembersScreen> {
                 controller: _controller,
               )
             ),
+            new CheckboxListTile(
+              title: new Text('Check here for this user to be an admin'),
+              value: _termsChecked,
+              onChanged: (bool value) =>
+                  setState(() => _termsChecked = value),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: RaisedButton(
                 color: Theme.of(context).accentColor,
                 onPressed: _onFormSubmit,
-                child: Text('Add Member'),
+                child: Text('Add'),
               ),
             ),
           ],

@@ -34,14 +34,14 @@ class _AccountScreenState extends State<AccountScreen> {
         await doc.updateData({'name': name, 'password': password});
       }
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('admin_user', name);
+      await prefs.setString('current_user', name);
       _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Update complete')));
     }
   }
 
   _updateAdmin(String oldName) async {
     final QuerySnapshot result = await Firestore.instance
-        .collection('admin-users')
+        .collection('users')
         .where('name', isEqualTo: oldName)
         .limit(1)
         .getDocuments();
@@ -58,7 +58,7 @@ class _AccountScreenState extends State<AccountScreen> {
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: new Text("Admin Login"),
+        title: new Text("Admin Account"),
       ),
       body: Form(
         key: _formKey,

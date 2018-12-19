@@ -26,15 +26,18 @@ class _LoginScreenState extends State<LoginScreen> {
       String name = _userController.text;
       String password = _passwordController.text;
       _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Attempting login')));
-      bool isValid = await _checkForAdmin(name, password);
-      if (isValid) {
+      Map<String, dynamic> data = await _checkExistence(name, password);
+      if (data != null) {
+        bool status = data['admin'];
         SharedPreferences prefs = widget.prefs;
         if (prefs == null) {
           prefs = await SharedPreferences.getInstance();
         }
+        await prefs.setString('current_user', name);
+        await prefs.setBool('admin_status', status);
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-                builder: (context) => MyHomePage(user: name)),
+                builder: (context) => MyHomePage(user: name, admin: status)),
                 (Route < dynamic > route) => false
         );
       } else {
@@ -43,14 +46,21 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  _checkForAdmin(String name, String password) async {
-    final QuerySnapshot result = await Firestore.instance
-        .collection('admin-users')
+  _checkExistence(String name, String password) async {
+    Map<String, dynamic> data;
+    await Firestore.instance
+        .collection('users')
         .where('name', isEqualTo: name)
         .where('password', isEqualTo: password)
         .limit(1)
-        .getDocuments();
-    return result.documents.length == 1;
+        .getDocuments()
+        .then((result) {
+          if (result.documents.length == 1) {
+            data = result.documents[0].data;
+          }
+        }
+    );
+    return data;
   }
 
   @override
@@ -63,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: new Text("Admin Login"),
+        title: new Text("User Login"),
       ),
       body: Form(
         key: _formKey,
@@ -76,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
                   hintText: 'Ryan Arnold',
-                  labelText: 'Admin Name',
+                  labelText: 'Member Name',
                   labelStyle: TextStyle(color: Colors.white),
                   focusedBorder: UnderlineInputBorder(
                       borderRadius: BorderRadius.zero,
