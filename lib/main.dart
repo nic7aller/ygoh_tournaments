@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splashscreen/splashscreen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:unicorndial/unicorndial.dart';
+import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:ygoh_tournaments/account.dart';
 import 'package:ygoh_tournaments/addMembers.dart';
+import 'package:ygoh_tournaments/bottomBar.dart';
 import 'package:ygoh_tournaments/login.dart';
 
 void main() => runApp(new MyApp());
@@ -53,12 +57,13 @@ class _MySplashScreenState extends State<MySplashScreen> {
     return new SplashScreen(
       seconds: 3,
       navigateAfterSeconds: _afterSplash,
-      title: new Text('We have been expecting you',
+      title: new Text(
+        'We have been expecting you',
         style: new TextStyle(
             fontWeight: FontWeight.bold,
             fontStyle: FontStyle.italic,
-            fontSize: 20.0
-        ),),
+            fontSize: 20.0),
+      ),
       image: new Image.network('https://picsum.photos/400/400/?random'),
       backgroundColor: Colors.grey[900],
       styleTextUnderTheLoader: new TextStyle(color: Colors.white),
@@ -80,7 +85,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
+  final _swiperController = new SwiperController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _bottomNavKey = GlobalKey<BottomNavBarState>();
   final _widgetOptions = [
     Text('Here is the main page, good user'),
     Text('Just another page, good user'),
@@ -105,13 +112,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _fabForAdmins() {
     if (widget.admin) {
-      return new FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => AddUsersScreen()),
-        ),
-        tooltip: 'Add Member',
-        child: new Icon(Icons.add),
+      var childButtons = List<UnicornButton>();
+      childButtons.add(UnicornButton(
+          hasLabel: true,
+          labelText: "Add User",
+          currentButton: FloatingActionButton(
+            heroTag: "add_user",
+            mini: true,
+            child: Icon(FontAwesomeIcons.userAstronaut),
+            onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddUsersScreen()),
+                ),
+          )));
+      return new UnicornDialer(
+        orientation: UnicornOrientation.VERTICAL,
+        parentButton: Icon(FontAwesomeIcons.plus),
+        finalButtonIcon: Icon(FontAwesomeIcons.times),
+        childButtons: childButtons,
+        animationDuration: 100,
+        hasBackground: false,
       );
     } else {
       return Container();
@@ -120,12 +140,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
+    final bottomNavBar = BottomNavBar(
+        key: _bottomNavKey,
+        controller: _swiperController,
+        index: _selectedIndex,
+    );
     return new Scaffold(
       key: _scaffoldKey,
       appBar: new AppBar(
@@ -134,44 +156,32 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
             icon: Icon(Icons.account_circle),
             tooltip: 'Account Management',
-            onPressed: () { _navigateAndUpdateUser(context); },
+            onPressed: () {
+              _navigateAndUpdateUser(context);
+            },
           ),
         ],
       ),
-      body: new Center(
-        child: new Column(
-          mainAxisAlignment: _alignmentOptions.elementAt(_selectedIndex),
-          children: <Widget>[
-            _widgetOptions.elementAt(_selectedIndex),
-          ],
-        ),
+      body: new Swiper(
+        itemBuilder: (BuildContext context, int index) {
+          return new Column(
+              mainAxisAlignment: _alignmentOptions.elementAt(index),
+              children: <Widget>[
+                _widgetOptions.elementAt(index),
+              ]);
+        },
+        itemCount: 3,
+        index: _selectedIndex,
+        loop: true,
+        onIndexChanged: (index) {
+          _selectedIndex = index;
+          if (_bottomNavKey.currentState.widget.index != index)
+            _bottomNavKey.currentState.updateIndex(_selectedIndex);
+        },
+        controller: _swiperController,
       ),
       floatingActionButton: _fabForAdmins(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              title: Text('Home')
-          ),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.child_care),
-              title: Text('Child\'s Game')
-          ),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.group),
-              title: Text('Members')
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        fixedColor: Colors.red[900],
-        onTap: _onItemTapped,
-      ),// This trailing comma makes auto-formatting nicer for build methods.
+      bottomNavigationBar: bottomNavBar,
     );
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 }
