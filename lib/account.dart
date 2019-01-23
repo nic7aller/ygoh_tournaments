@@ -92,7 +92,7 @@ class _AccountScreenState extends State<AccountScreen> {
               TextFormField(
                 decoration: const InputDecoration(
                   hintText: 'h@ck3rm@n',
-                  labelText: 'Password',
+                  labelText: 'New Password',
                   labelStyle: TextStyle(color: Colors.white),
                   focusedBorder: UnderlineInputBorder(
                     borderRadius: BorderRadius.zero,
@@ -109,7 +109,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 TextFormField(
                   decoration: const InputDecoration(
                     hintText: 'h@ck3rm@n',
-                    labelText: 'Confirm Password',
+                    labelText: 'Confirm New Password',
                     labelStyle: TextStyle(color: Colors.white),
                     focusedBorder: UnderlineInputBorder(
                       borderRadius: BorderRadius.zero,

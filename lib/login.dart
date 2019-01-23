@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ygoh_tournaments/home.dart';
 import 'package:ygoh_tournaments/main.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setBool('admin_status', status);
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-                builder: (context) => MyHomePage(user: name, admin: status)),
+                builder: (context) => HomePage(user: name, admin: status)),
                 (Route < dynamic > route) => false
         );
       } else {

@@ -21,13 +21,14 @@ class BottomNavBarState extends State<BottomNavBar> {
           title: Text('Home'),
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.child_care),
-          title: Text('Child\'s Game'),
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.group),
           title: Text('Members'),
         ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.child_care),
+          title: Text('Child\'s Game'),
+        ),
+
       ],
       currentIndex: widget.index,
       fixedColor: Colors.red[900],
