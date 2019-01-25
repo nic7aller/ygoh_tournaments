@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splashscreen/splashscreen.dart';
@@ -18,14 +19,23 @@ class _ASplashScreenState extends State<ASplashScreen> {
     String user = prefs.getString('current_user');
     bool admin = prefs.getBool('admin_status');
     if (user != null) {
-      setState(() {
-        _afterSplash = new HomePage(user: user, admin: admin);
-      });
-    } else {
-      setState(() {
-        _afterSplash = new LoginScreen(prefs: prefs);
-      });
+      QuerySnapshot snapshot = await Firestore.instance
+          .collection('users').where('name', isEqualTo: user).getDocuments();
+      if (snapshot.documents.isNotEmpty) {
+        String userId = snapshot.documents
+            .where((doc) => doc['name'] == user).elementAt(0).documentID;
+        if (this.mounted) {
+          setState(() {
+            _afterSplash =
+            new HomePage(userId: userId, user: user, admin: admin);
+          });
+          return;
+        }
+      }
     }
+    setState(() {
+      _afterSplash = new LoginScreen(prefs: prefs);
+    });
   }
 
   @override

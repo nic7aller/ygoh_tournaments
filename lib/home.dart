@@ -4,6 +4,7 @@ import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unicorndial/unicorndial.dart';
+import 'package:ygoh_tournaments/PlayerInfo.dart';
 import 'package:ygoh_tournaments/PlayerList.dart';
 import 'package:ygoh_tournaments/account.dart';
 import 'package:ygoh_tournaments/addScore.dart';
@@ -11,8 +12,9 @@ import 'package:ygoh_tournaments/addMembers.dart';
 import 'package:ygoh_tournaments/bottomBar.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({Key key, this.user, this.admin}) : super(key: key);
+  HomePage({Key key, this.userId, this.user, this.admin}) : super(key: key);
 
+  String userId;
   String user;
   bool admin;
 
@@ -25,16 +27,24 @@ class _HomePageState extends State<HomePage> {
   final _swiperController = new SwiperController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _bottomNavKey = GlobalKey<BottomNavBarState>();
-  final _widgetOptions = [
-    Text('Here is the main page, good user'),
+  final _widgetOptions = <Widget>[
+    PlayerInfo(),
     PlayerList(),
     Text('THE FINAL PAGE'),
   ];
   final _alignmentOptions = [
-    MainAxisAlignment.center,
+    MainAxisAlignment.start,
     MainAxisAlignment.center,
     MainAxisAlignment.start,
   ];
+
+  @override
+  initState() {
+    PlayerInfo playerInfo = _widgetOptions[0];
+    playerInfo.userId = widget.userId;
+    playerInfo.user = widget.user;
+    super.initState();
+  }
 
   _navigateAndUpdateUser(BuildContext context) async {
     await Navigator.push(

@@ -27,9 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
       String name = _userController.text;
       String password = _passwordController.text;
       _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Attempting login')));
-      Map<String, dynamic> data = await _checkExistence(name, password);
-      if (data != null) {
-        bool status = data['admin'];
+      DocumentSnapshot doc = await _checkExistence(name, password);
+      if (doc != null) {
+        bool status = doc['admin'];
         SharedPreferences prefs = widget.prefs;
         if (prefs == null) {
           prefs = await SharedPreferences.getInstance();
@@ -38,7 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setBool('admin_status', status);
         Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-                builder: (context) => HomePage(user: name, admin: status)),
+                builder: (context) => HomePage(
+                    userId: doc.documentID, user: name, admin: status)
+                ),
                 (Route < dynamic > route) => false
         );
       } else {
@@ -48,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   _checkExistence(String name, String password) async {
-    Map<String, dynamic> data;
+    DocumentSnapshot data;
     await Firestore.instance
         .collection('users')
         .where('name', isEqualTo: name)
@@ -57,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
         .getDocuments()
         .then((result) {
           if (result.documents.length == 1) {
-            data = result.documents[0].data;
+            data = result.documents[0];
           }
         }
     );
