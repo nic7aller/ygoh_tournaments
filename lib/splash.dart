@@ -37,9 +37,10 @@ class _ASplashScreenState extends State<ASplashScreen> {
       title: new Text(
         'We have been expecting you',
         style: new TextStyle(
-            fontWeight: FontWeight.bold,
-            fontStyle: FontStyle.italic,
-            fontSize: 20.0),
+          fontWeight: FontWeight.bold,
+          fontStyle: FontStyle.italic,
+          fontSize: 20.0,
+        ),
       ),
       image: new Image.asset('assets/club_logo.jpg'),
       backgroundColor: Colors.grey[900],

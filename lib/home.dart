@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unicorndial/unicorndial.dart';
 import 'package:ygoh_tournaments/PlayerList.dart';
 import 'package:ygoh_tournaments/account.dart';
-import 'package:ygoh_tournaments/addEvent.dart';
+import 'package:ygoh_tournaments/addScore.dart';
 import 'package:ygoh_tournaments/addMembers.dart';
 import 'package:ygoh_tournaments/bottomBar.dart';
 
@@ -64,11 +64,11 @@ class _HomePageState extends State<HomePage> {
           )));
       childButtons.add(UnicornButton(
           hasLabel: true,
-          labelText: "Add Event",
+          labelText: "Add Score",
           currentButton: FloatingActionButton(
-            heroTag: "add_event",
+            heroTag: "add_score",
             mini: true,
-            child: Icon(FontAwesomeIcons.meteor),
+            child: Icon(FontAwesomeIcons.award),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AddScoresScreen()),

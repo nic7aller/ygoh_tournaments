@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:ygoh_tournaments/FireDropdownButton.dart';
 
 class AddScoresScreen extends StatefulWidget {
   @override
@@ -12,66 +14,104 @@ class AddScoresScreen extends StatefulWidget {
 }
 
 class _AddScoreScreenState extends State<AddScoresScreen> {
-
-  final _nameController = new TextEditingController();
-  final  _typeAheadController = TextEditingController();
+  final _detailsController = new TextEditingController();
+  final _rankController = new TextEditingController();
+  final _nameSelectController = new TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _dateFormat = DateFormat("EEEE, MMMM d, yyyy");
-  String _userId = '';
+  FocusNode _focusNode;
   DateTime _date;
+  String _userId;
+  String _userName;
+  String _eventTypeId;
+
+  @override
+  initState() {
+    _userId = '';
+    _userName = '';
+    _focusNode = new FocusNode();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        _formKey.currentState.save();
+      }
+    });
+    super.initState();
+  }
 
   _onFormSubmit() async {
-    // Validate will return true if the form is valid, or false if
-    // the form is invalid.
+    _formKey.currentState.save();
     if (_formKey.currentState.validate()) {
-      String name = _nameController.text;
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text('Adding ' + name)));
-      String snackMessage = await _addScore(name, _date);
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(snackMessage)));
+      debugPrint('Started from the bottom now we here');
+      String name = _detailsController.text;
+      int rank = int.parse(_rankController.text);
+      _scaffoldKey.currentState
+          .showSnackBar(SnackBar(content: Text('Adding ' + name)));
+      String snackMessage =
+          await _addScore(name, _date, rank, _eventTypeId);
+      _scaffoldKey.currentState
+          .showSnackBar(SnackBar(content: Text(snackMessage)));
     }
   }
 
-  _setUserIdIfEmpty(String name) async {
-    if (this._userId.isEmpty) {
-      await Firestore.instance.collection('users')
+  void _setUserIdIfEmpty(name) async {
+    if (this._userId.isEmpty || this._userName != name) {
+      Firestore.instance
+          .collection('users')
           .where('name', isEqualTo: name)
           .getDocuments()
-          .then(
-              (snapshot) {
-            if (snapshot.documents.isNotEmpty) {
-              this._userId = snapshot.documents[0].documentID;
-            }
-          }
-      );
+          .then((snapshot) {
+        if (snapshot.documents.isNotEmpty) {
+          this._userId = snapshot.documents[0].documentID;
+          this._userName = name;
+        }
+      }).catchError(() => this._userId = '');
     }
   }
 
-  FutureOr<List<DocumentSnapshot>> _getUsersThatIncludePattern(String pattern) async {
-    QuerySnapshot snapshot = await Firestore.instance.collection('users').getDocuments();
-    return snapshot.documents.where((doc) => doc.data['name'].contains(pattern)).toList();
+  FutureOr<List<DocumentSnapshot>> _getUsersThatIncludePattern(
+      String pattern) async {
+    QuerySnapshot snapshot =
+        await Firestore.instance.collection('users').getDocuments();
+    return snapshot.documents
+        .where((doc) => doc.data['name'].contains(pattern))
+        .toList();
   }
 
-  _addScore(String name, DateTime date) async {
-//    TODO: Add score to Firebase
-//    String message = name + ' is now an event';
-//    await Firestore.instance.collection('events')
-//        .add({
-//          'name': name,
-//          'date': date,
-//        })
-//        .catchError((e) {
-//          message = 'Event could not be added';
-//        }
-//    );
-//    return message;
+  _addScore(String details, DateTime date, int rank, String type) async {
+    String message = 'Score added for ' + _userName;
+    int nScore;
+    await Firestore.instance
+        .collection('event-type')
+        .document(type).get()
+        .then((doc) => nScore = doc.data['score_adder']);
+    nScore = nScore - rank + 1;
+    DocumentReference userRef = Firestore.instance
+        .collection('users').document(_userId);
+    await userRef.get()
+        .then((doc) {
+          int ogScore = doc.data['score'];
+          userRef.updateData({'score': ogScore + nScore,});
+        })
+        .catchError((e) {
+          message = 'Score could not be added to user';
+          debugPrint('Score not updated in Firestore');
+        });
+    await userRef
+        .collection('scores')
+        .add({
+          'details': details,
+          'date': date,
+          'type_id': type,
+          'position': rank,
+        }).catchError((e) {
+          message = 'Event could not be added to user';
+        });
+    return message;
   }
 
   @override
   Widget build(BuildContext context) {
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return new Scaffold(
       key: _scaffoldKey,
       appBar: new AppBar(
@@ -85,21 +125,22 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
           children: <Widget>[
             new ListTile(
               leading: const Icon(Icons.person),
-              title:
-              TypeAheadFormField(
+              title: TypeAheadFormField(
                 textFieldConfiguration: TextFieldConfiguration(
-                    controller: this._typeAheadController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ryan Arnold',
-                      labelText: 'Member Name',
-                      labelStyle: TextStyle(color: Colors.white),
-                      focusedBorder: UnderlineInputBorder(
-                        borderRadius: BorderRadius.zero,
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
+                  controller: this._nameSelectController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    hintText: 'Ryan Arnold',
+                    labelText: 'Member Name',
+                    labelStyle: TextStyle(color: Colors.white),
+                    focusedBorder: UnderlineInputBorder(
+                      borderRadius: BorderRadius.zero,
+                      borderSide: BorderSide(color: Colors.white),
                     ),
+                  ),
+                  focusNode: _focusNode,
                 ),
-                getImmediateSuggestions: true,
+                getImmediateSuggestions: false,
                 suggestionsCallback: _getUsersThatIncludePattern,
                 itemBuilder: (context, suggestion) {
                   return ListTile(
@@ -110,7 +151,8 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
                   return suggestionsBox;
                 },
                 onSuggestionSelected: (suggestion) {
-                  this._typeAheadController.text = suggestion.data['name'];
+                  this._nameSelectController.text = suggestion.data['name'];
+                  this._userName = suggestion.data['name'];
                   this._userId = suggestion.documentID;
                 },
                 validator: (value) {
@@ -122,45 +164,90 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
               ),
             ),
             new ListTile(
-            leading: const Icon(Icons.event_seat),
-            title:
-              TextFormField(
-                textCapitalization: TextCapitalization.words,
+              leading: const Icon(Icons.event),
+              title: DateTimePickerFormField(
                 decoration: const InputDecoration(
-                  hintText: 'Weekly Tournament #0',
-                  labelText: 'Event Name',
+                  labelText: 'Event Date',
                   labelStyle: TextStyle(color: Colors.white),
                   focusedBorder: UnderlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide: BorderSide(color: Colors.white),
+                    borderRadius: BorderRadius.zero,
+                    borderSide: BorderSide(color: Colors.white),
                   ),
                 ),
+                dateOnly: true,
+                format: _dateFormat,
+                onChanged: (dt) => setState(() => _date = dt),
                 validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Please enter a name';
+                  if (value == null) {
+                    return 'Please select the start date of the event';
                   }
                 },
-                controller: _nameController,
-              )
+              ),
             ),
             new ListTile(
-                leading: const Icon(Icons.event),
-                title:
-                DateTimePickerFormField(
+              leading: const Icon(Icons.event_seat),
+              title: new FireDropdownButton(
+                collection: 'event-type',
+                prettyField: 'name',
+                orderField: 'score_adder',
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select an event type';
+                  }
+                },
+                onSaved: (value) => _eventTypeId = value,
+                decoration: const InputDecoration(
+                  labelText: 'Event Type',
+                  labelStyle: TextStyle(color: Colors.white),
+                  focusedBorder: UnderlineInputBorder(
+                    borderRadius: BorderRadius.zero,
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+            new ListTile(
+                leading: const Icon(Icons.event_note),
+                title: TextFormField(
+                  textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
-                    labelText: 'Event Date',
+                    hintText: 'Weekly Tournament #0',
+                    labelText: 'Event Details',
                     labelStyle: TextStyle(color: Colors.white),
                     focusedBorder: UnderlineInputBorder(
                       borderRadius: BorderRadius.zero,
                       borderSide: BorderSide(color: Colors.white),
                     ),
                   ),
-                  initialDate: DateTime.now(),
-                  dateOnly: true,
-                  format: _dateFormat,
-                  onChanged: (dt) => setState(() => _date = dt),
-                )
-            ),
+                  validator: (value) {
+                    if (value.isEmpty) {
+                      return 'Please enter some details about the event';
+                    }
+                  },
+                  controller: _detailsController,
+                  maxLines: null,
+                )),
+            new ListTile(
+                leading: const Icon(FontAwesomeIcons.medal),
+                title: TextFormField(
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    hintText: '1',
+                    labelText: 'Event Rank',
+                    labelStyle: TextStyle(color: Colors.white),
+                    focusedBorder: UnderlineInputBorder(
+                      borderRadius: BorderRadius.zero,
+                      borderSide: BorderSide(color: Colors.white),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value.isEmpty || int.tryParse(value) == null) {
+                      return 'Please select a valid integer rank';
+                    }
+                  },
+                  keyboardType: TextInputType.number,
+                  controller: _rankController,
+                )),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: RaisedButton(

@@ -11,7 +11,7 @@ class PlayerList extends StatefulWidget {
 }
 
 class PlayerListState extends State<PlayerList> {
-  final f = new NumberFormat("#,###", "en_US");
+  final num_format = new NumberFormat("#,###", "en_US");
 
   @override
   Widget build(BuildContext context) {
@@ -20,12 +20,14 @@ class PlayerListState extends State<PlayerList> {
           .orderBy('score', descending: true).snapshots(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) return new Text('Loading...');
+        int i = 1;
         return new Expanded(
           child: new ListView(
             children: snapshot.data.documents.map((document) {
               return new ListTile(
+                leading: Text(num_format.format(i++)),
                 title: new Text(document['name']),
-                trailing: new Text(f.format(document['score'])),
+                trailing: new Text(num_format.format(document['score'])),
               );
             }).toList(),
           )
