@@ -4,6 +4,7 @@ import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unicorndial/unicorndial.dart';
+import 'package:ygoh_tournaments/EventTypeList.dart';
 import 'package:ygoh_tournaments/PlayerInfo.dart';
 import 'package:ygoh_tournaments/PlayerList.dart';
 import 'package:ygoh_tournaments/account.dart';
@@ -23,26 +24,34 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
   final _swiperController = new SwiperController();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _bottomNavKey = GlobalKey<BottomNavBarState>();
+  final _titleOptions = <String>[
+    '',
+    'Leaderboard',
+    'Event Types',
+  ];
   final _widgetOptions = <Widget>[
     PlayerInfo(),
     PlayerList(),
-    Text('THE FINAL PAGE'),
+    EventTypeList(),
   ];
   final _alignmentOptions = [
     MainAxisAlignment.start,
     MainAxisAlignment.center,
     MainAxisAlignment.start,
   ];
+  int _selectedIndex = 0;
+  Widget _fab;
 
   @override
   initState() {
     PlayerInfo playerInfo = _widgetOptions[0];
     playerInfo.userId = widget.userId;
     playerInfo.user = widget.user;
+    _titleOptions[0] = 'Welcome ${widget.user}';
+    _fab = _fabForAdmins();
     super.initState();
   }
 
@@ -107,10 +116,11 @@ class _HomePageState extends State<HomePage> {
       controller: _swiperController,
       index: _selectedIndex,
     );
+    _titleOptions[0] = 'Welcome ${widget.user}';
     return new Scaffold(
       key: _scaffoldKey,
       appBar: new AppBar(
-        title: new Text('Welcome ' + widget.user),
+        title: new Text(_titleOptions.elementAt(_selectedIndex)),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.account_circle),
@@ -136,10 +146,13 @@ class _HomePageState extends State<HomePage> {
           _selectedIndex = index;
           if (_bottomNavKey.currentState.widget.index != index)
             _bottomNavKey.currentState.updateIndex(_selectedIndex);
+          setState(() {
+            _selectedIndex = index;
+          });
         },
         controller: _swiperController,
       ),
-      floatingActionButton: _fabForAdmins(),
+      floatingActionButton: _fab,
       bottomNavigationBar: bottomNavBar,
     );
   }

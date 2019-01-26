@@ -4,21 +4,21 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:ygoh_tournaments/player.dart';
 
-class PlayerList extends StatefulWidget {
-  PlayerList({Key key}) : super(key: key);
+class EventTypeList extends StatefulWidget {
+  EventTypeList({Key key}) : super(key: key);
 
   @override
-  PlayerListState createState() => new PlayerListState();
+  EventTypeListState createState() => new EventTypeListState();
 }
 
-class PlayerListState extends State<PlayerList> {
+class EventTypeListState extends State<EventTypeList> {
   final _numFormat = new NumberFormat("#,###", "en_US");
 
   @override
   Widget build(BuildContext context) {
     return new StreamBuilder(
-      stream: Firestore.instance.collection('users')
-          .orderBy('score', descending: true).snapshots(),
+      stream: Firestore.instance.collection('event-type')
+          .orderBy('score_adder', descending: true).snapshots(),
       builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
         if (!snapshot.hasData) return new Text('Loading...');
         int i = 1;
@@ -35,16 +35,7 @@ class PlayerListState extends State<PlayerList> {
                     child: new ListTile(
                       leading: Text(_numFormat.format(i++)),
                       title: new Text(document['name']),
-                      trailing: new Text(_numFormat.format(document['score'])),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) =>
-                          new PlayerScreen(
-                              userId: document.documentID,
-                              user: document['name']
-                          )
-                        ),
-                      ),
+                      subtitle: new Text('Rank #1: ${_numFormat.format(document['score_adder'])}'),
                     ),
                   ),
                 );

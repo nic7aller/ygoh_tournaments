@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -25,8 +24,8 @@ class BottomNavBarState extends State<BottomNavBar> {
           title: Text('Members'),
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.child_care),
-          title: Text('Child\'s Game'),
+          icon: Icon(Icons.casino),
+          title: Text('Event Types'),
         ),
 
       ],

@@ -23,17 +23,19 @@ class _PlayerInfoState extends State<PlayerInfo> {
   _PlayerInfoState(String userId) {
     initState();
     Firestore.instance.collection('users').document(userId).get().then((doc) {
-      setState(() {
-        _fScore = 'Score: ' + _numFormat.format(doc['score']);
-      });
+      if (mounted)
+        setState(() {
+          _fScore = 'Score: ' + _numFormat.format(doc['score']);
+        });
     });
     Firestore.instance.collection('event-type').getDocuments().then((snapshot) {
       List<DocumentSnapshot> docs = snapshot.documents;
-      setState(() {
-        _eventTypes = Map.fromEntries(
-            docs.map((doc) => new MapEntry(doc.documentID, doc.data))
-        );
-      });
+      if (mounted)
+        setState(() {
+          _eventTypes = Map.fromEntries(
+              docs.map((doc) => new MapEntry(doc.documentID, doc.data))
+          );
+        });
     });
   }
 
@@ -52,8 +54,8 @@ class _PlayerInfoState extends State<PlayerInfo> {
             ),
             new Column(
               children: <Widget>[
-                new Text(user),
-                new Text(_fScore),
+                new Text(user, textScaleFactor: 1.5,),
+                new Text(_fScore, textScaleFactor: 1.2,),
               ],
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
