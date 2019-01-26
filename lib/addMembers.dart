@@ -26,17 +26,29 @@ class _AddUserScreenState extends State<AddUsersScreen> {
 
   _addUser(String name, bool isAdmin) async {
     String message = name + ' is now a user';
-    await Firestore.instance.collection('users')
-        .add({
-          'name': name,
-          'password': 'password',
-          'admin': isAdmin,
-          'score': 0
-        })
-        .catchError((e) {
+    await Firestore.instance
+        .collection('users')
+        .where('name', isEqualTo: name)
+        .getDocuments()
+        .then((snapshot) {
+          if (snapshot.documents.length == 0) {
+            Firestore.instance.collection('users')
+                .add({
+                  'name': name,
+                  'password': 'password',
+                  'admin': isAdmin,
+                  'score': 0
+                })
+                .catchError((e) {
+                  message = 'User could not be added';
+                }
+            );
+          } else {
+            message = '$name is already a user';
+          }
+        }).catchError((e) {
           message = 'User could not be added';
-        }
-    );
+        });
     return message;
   }
 

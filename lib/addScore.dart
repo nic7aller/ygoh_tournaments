@@ -20,6 +20,7 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _dateFormat = DateFormat("EEEE, MMMM d, yyyy");
+  List<List<dynamic>> _previousScores;
   FocusNode _focusNode;
   DateTime _date;
   String _userId;
@@ -28,6 +29,7 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
 
   @override
   initState() {
+    _previousScores = [];
     _userId = '';
     _userName = '';
     _focusNode = new FocusNode();
@@ -42,7 +44,6 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
   _onFormSubmit() async {
     _formKey.currentState.save();
     if (_formKey.currentState.validate()) {
-      debugPrint('Started from the bottom now we here');
       String name = _detailsController.text;
       int rank = int.parse(_rankController.text);
       _scaffoldKey.currentState
@@ -80,11 +81,21 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
 
   _addScore(String details, DateTime date, int rank, String type) async {
     String message = 'Score added for ' + _userName;
-    int nScore;
+    List<dynamic> newScoreList = [details, date, type, rank];
+    if (isListInList(_previousScores, newScoreList)) {
+      message = 'You have previously added this same score for $_userName';
+      return message;
+    }
+    int nScore, maxRank;
     await Firestore.instance
         .collection('event-type')
         .document(type).get()
-        .then((doc) => nScore = doc.data['score_adder']);
+        .then((doc) {
+          nScore = doc.data['score_adder'];
+          maxRank = doc['max_rank'];
+        });
+    if (maxRank < rank)
+      return 'Rank must be at most $maxRank for this event type';
     nScore = nScore - rank + 1;
     DocumentReference userRef = Firestore.instance
         .collection('users').document(_userId);
@@ -104,10 +115,23 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
           'date': date,
           'type_id': type,
           'position': rank,
-        }).catchError((e) {
+        })
+        .then((ref) => _previousScores.add(newScoreList))
+        .catchError((e) {
           message = 'Event could not be added to user';
         });
     return message;
+  }
+
+  static bool isListInList(List<List> listOfLists, List list) {
+    for (List inList in listOfLists) {
+      bool allIn = true;
+      for (var item in list) {
+        allIn = allIn && inList.contains(item);
+      }
+      if (allIn) return true;
+    }
+    return false;
   }
 
   @override

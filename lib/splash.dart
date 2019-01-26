@@ -33,9 +33,10 @@ class _ASplashScreenState extends State<ASplashScreen> {
         }
       }
     }
-    setState(() {
-      _afterSplash = new LoginScreen(prefs: prefs);
-    });
+    if (this.mounted)
+      setState(() {
+        _afterSplash = new LoginScreen(prefs: prefs);
+      });
   }
 
   @override

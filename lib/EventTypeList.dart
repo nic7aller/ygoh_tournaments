@@ -35,7 +35,9 @@ class EventTypeListState extends State<EventTypeList> {
                     child: new ListTile(
                       leading: Text(_numFormat.format(i++)),
                       title: new Text(document['name']),
-                      subtitle: new Text('Rank #1: ${_numFormat.format(document['score_adder'])}'),
+                      subtitle: new Text('Rank #1: ${_numFormat.format(document['score_adder'])}'
+                          '\nMax Rank: ${_numFormat.format(document['max_rank'])}'),
+                      isThreeLine: true,
                     ),
                   ),
                 );

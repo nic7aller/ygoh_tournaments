@@ -71,10 +71,10 @@ class _PlayerInfoState extends State<PlayerInfo> {
               .snapshots(),
           builder:
               (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (!snapshot.hasData) return new Text('Loading...');
-            if (_isExpanded == null || _isExpanded.isEmpty) {
-              _isExpanded = new List<bool>.generate(
-                  snapshot.data.documents.length, (i) => false);
+            if (!snapshot.hasData) return new Text('No Scores Found [Yet]');
+            var length = snapshot.data.documents.length;
+            if (_isExpanded == null || _isExpanded.isEmpty || length != _isExpanded.length) {
+              _isExpanded = new List<bool>.generate(length, (i) => false);
             }
             int i = 0;
             return new Container(
@@ -87,7 +87,7 @@ class _PlayerInfoState extends State<PlayerInfo> {
                   },
                   children: snapshot.data.documents.map((doc) {
                     return new ExpansionPanel(
-                      isExpanded: _isExpanded[i],
+                      isExpanded: _isExpanded[i++],
                       headerBuilder: (context, isExpanded) => new ListTile(
                         leading:
                             new Text(_dateFormat.format(doc['date'])),
