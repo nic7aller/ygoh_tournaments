@@ -53,7 +53,7 @@ class _ASplashScreenState extends State<ASplashScreen> {
           fontSize: 20.0,
         ),
       ),
-      image: new Image.asset('assets/club_logo.jpg'),
+      image: new Image.asset('assets/ic_launcher/web_hi_res_512.png'),
       backgroundColor: Colors.grey[900],
       styleTextUnderTheLoader: new TextStyle(color: Colors.white),
       photoSize: 100.0,
