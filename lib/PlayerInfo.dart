@@ -66,23 +66,37 @@ class _PlayerInfoState extends State<PlayerInfo> {
     _loadFinalScore(userId);
     return new Column(children: <Widget>[
       new Container(
-        margin: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0),
-        child: new Row(
-          children: <Widget>[
-            Image.network(
-              'https://robohash.org/$userId.png',
-              scale: 3.0,
-            ),
-            new Column(
+        margin: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+        child: new Material(
+          elevation: 2.0,
+          color: Theme.of(context).cardColor,
+          child: new Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: new Row(
               children: <Widget>[
-                new Text(user, textScaleFactor: 1.5,),
-                _fScore == null
-                    ? new Text('Score: Loading...', textScaleFactor: 1.2,)
-                    : new Text(_fScore, textScaleFactor: 1.2,),
+                new Container(
+                  padding: EdgeInsets.only(right: 16.0),
+                  child: new CircleAvatar(
+                    backgroundImage:
+                      NetworkImage('https://robohash.org/$userId.png'),
+                    backgroundColor: Theme.of(context).canvasColor,
+                    minRadius: 30.0,
+                    maxRadius: 40.0,
+                  ),
+                ),
+                new Column(
+                  children: <Widget>[
+                    new Text(user, textScaleFactor: 1.5,),
+                    _fScore == null
+                        ? new Text('Score: Loading...', textScaleFactor: 1.2,)
+                        : new Text(_fScore, textScaleFactor: 1.2,),
+                  ],
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                ),
               ],
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
             ),
-          ],
+          ),
         ),
       ),
       new StreamBuilder(
@@ -94,22 +108,23 @@ class _PlayerInfoState extends State<PlayerInfo> {
               .snapshots(),
           builder:
               (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (!snapshot.hasData) return new Text('No Scores Found [Yet]');
+            var emptyWidget = new Container(
+              margin: const EdgeInsets.all(16.0),
+              child: new Material(
+                color: Theme.of(context).cardColor,
+                elevation: 2.0,
+                child: new Container(
+                  margin: const EdgeInsets.all(16.0),
+                  child: new Text('No Scores Found [Yet]', textScaleFactor: 1.2,),
+                ),
+              ),
+            );
+            if (!snapshot.hasData) return emptyWidget;
             var length = snapshot.data.documents.length;
             if (_isExpanded == null || length != _isExpanded.length) {
               _isExpanded = new List<bool>.generate(length, (i) => false);
             } else if (length == 0){
-              return new Container(
-                margin: const EdgeInsets.all(16.0),
-                child: new Material(
-                  color: Theme.of(context).cardColor,
-                  elevation: 2.0,
-                  child: new Container(
-                    margin: const EdgeInsets.all(16.0),
-                    child: new Text('No Scores Found [Yet]', textScaleFactor: 1.2,),
-                  ),
-                ),
-              );
+              return emptyWidget;
             }
             int i = 0;
             return new Container(
