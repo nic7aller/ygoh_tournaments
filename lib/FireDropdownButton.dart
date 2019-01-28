@@ -1,33 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FireDropdownButton<DocumentSnapshot> extends FormField<DocumentSnapshot> {
+class FireDropdownButton extends FormField<String> {
   FireDropdownButton({
     Key key,
     @required String collection,
     @required String prettyField,
-    String orderField = '',
+    String orderField,
     InputDecoration decoration,
-    DocumentSnapshot initialValue,
+    String initialValue,
     bool autovalidate = false,
-    FormFieldSetter<DocumentSnapshot> onSaved,
-    FormFieldValidator<DocumentSnapshot> validator,
+    FormFieldSetter<String> onSaved,
+    FormFieldValidator<String> validator,
   }) : super(
     key: key,
     onSaved: onSaved,
     validator: validator,
     autovalidate: autovalidate,
     initialValue: initialValue,
-    builder: (FormFieldState<DocumentSnapshot> field) {
+    builder: (FormFieldState<String> field) {
       final InputDecoration effectiveDecoration = (decoration ?? const InputDecoration())
           .applyDefaults(Theme.of(field.context).inputDecorationTheme);
-
       return InputDecorator(
         decoration:
         effectiveDecoration.copyWith(errorText: field.hasError ? field.errorText : null),
         isEmpty: field.value == null,
         child: new StreamBuilder<QuerySnapshot>(
-          stream: orderField.isEmpty
+          stream: orderField == null || orderField.isEmpty
               ? Firestore.instance
               .collection(collection)
               .snapshots()
@@ -38,7 +37,7 @@ class FireDropdownButton<DocumentSnapshot> extends FormField<DocumentSnapshot> {
           builder: (context, snapshot) {
             if (!snapshot.hasData) return new Text('Loading...');
             return new DropdownButtonHideUnderline(
-              child: new DropdownButton<dynamic>(
+              child: new DropdownButton<String>(
                 value: field.value,
                 isDense: true,
                 isExpanded: true,

@@ -8,36 +8,67 @@ import 'package:intl/intl.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:ygoh_tournaments/FireDropdownButton.dart';
 
-class AddScoresScreen extends StatefulWidget {
+class EditScoreScreen extends StatefulWidget {
+  EditScoreScreen(
+      {
+        Key key,
+        this.userId,
+        this.user,
+        this.scoreId,
+        this.details,
+        this.date,
+        this.rank,
+        this.type,
+        this.score
+      }
+  ) : super(key: key);
+
+  final String userId;
+  final String user;
+  final String scoreId;
+  final String details;
+  final DateTime date;
+  final int rank;
+  final String type;
+  final int score;
+
   @override
-  _AddScoreScreenState createState() => new _AddScoreScreenState();
+  _EditScoreScreenState createState() => new _EditScoreScreenState();
 }
 
-class _AddScoreScreenState extends State<AddScoresScreen> {
+class _EditScoreScreenState extends State<EditScoreScreen> {
   final _detailsController = new TextEditingController();
   final _rankController = new TextEditingController();
-  final _nameSelectController = new TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _dropdownKey = GlobalKey<FormFieldState>();
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _dateFormat = DateFormat("EEEE, MMMM d, yyyy");
-  List<List<dynamic>> _previousScores;
-  FocusNode _focusNode;
-  DateTime _date;
+  final _numFormat = new NumberFormat("#,###", "en_US");
   String _userId;
   String _userName;
+  String _scoreId;
+  String _oDetails;
+  DateTime _oDate;
+  int _oRank;
+  String _oType;
+  int _oScore;
+  DateTime _date;
   String _eventTypeId;
 
   @override
   initState() {
-    _previousScores = [];
-    _userId = '';
-    _userName = '';
-    _focusNode = new FocusNode();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        _formKey.currentState.save();
-      }
-    });
+    _userId = widget.userId;
+    _userName = widget.user;
+    _scoreId = widget.scoreId;
+    _oDetails = widget.details;
+    _oDate = widget.date;
+    _oRank = widget.rank;
+    _oType = widget.type;
+    _oScore = widget.score;
+    _date = _oDate;
+    _eventTypeId = _oType;
+    _detailsController.text = _oDetails;
+    _rankController.text = _numFormat.format(_oRank);
     super.initState();
   }
 
@@ -47,91 +78,107 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
       String details = _detailsController.text;
       int rank = int.parse(_rankController.text);
       _scaffoldKey.currentState
-          .showSnackBar(SnackBar(content: Text('Adding ' + details)));
+          .showSnackBar(SnackBar(content: Text('Updating score')));
       String snackMessage =
-          await _addScore(details, _date, rank, _eventTypeId);
+          await _updateScore(details, _date, rank, _eventTypeId);
       _scaffoldKey.currentState
           .showSnackBar(SnackBar(content: Text(snackMessage)));
     }
   }
 
-  void _setUserIdIfEmpty(name) async {
-    if (this._userId.isEmpty || this._userName != name) {
-      Firestore.instance
-          .collection('users')
-          .where('name', isEqualTo: name)
-          .getDocuments()
-          .then((snapshot) {
-        if (snapshot.documents.isNotEmpty) {
-          this._userId = snapshot.documents[0].documentID;
-          this._userName = name;
-        }
-      }).catchError(() => this._userId = '');
-    }
-  }
-
-  FutureOr<List<DocumentSnapshot>> _getUsersThatIncludePattern(
-      String pattern) async {
-    QuerySnapshot snapshot =
-        await Firestore.instance.collection('users').getDocuments();
-    return snapshot.documents
-        .where((doc) => doc.data['name'].toLowerCase().contains(pattern.toLowerCase()))
-        .toList();
-  }
-
-  _addScore(String details, DateTime date, int rank, String type) async {
-    String message = 'Score added for ' + _userName;
-    List<dynamic> newScoreList = [details, date, type, rank];
-    if (isListInList(_previousScores, newScoreList)) {
-      message = 'You have previously added this same score for $_userName';
-      return message;
-    }
+  _updateScore(String details, DateTime date, int rank, String type) async {
+    String message = 'Score edited for ' + _userName;
     int nScore, maxRank;
     await Firestore.instance
         .collection('event-type')
         .document(type).get()
         .then((doc) {
-          nScore = doc.data['score_adder'];
+          nScore = doc['score_adder'];
           maxRank = doc['max_rank'];
         });
     if (maxRank < rank)
       return 'Rank must be at most $maxRank for this event type';
-    nScore = nScore - rank + 1;
     DocumentReference userRef = Firestore.instance
         .collection('users').document(_userId);
-    await userRef.get()
-        .then((doc) {
-          int ogScore = doc.data['score'];
-          userRef.updateData({'score': ogScore + nScore,});
-        })
-        .catchError((e) {
-          message = 'Score could not be added to user';
-          debugPrint('Score not updated in Firestore');
-        });
+    nScore = nScore - rank + 1;
+    if (nScore != _oScore) {
+      await userRef.get()
+          .then((doc) {
+            int ogScore = doc['score'];
+            userRef.updateData({'score': ogScore + nScore - _oScore,});
+          })
+          .catchError((e) {
+            message = 'Score could not be updated';
+            debugPrint('Score not updated in Firestore');
+          });
+    }
     await userRef
         .collection('scores')
-        .add({
+        .document(_scoreId)
+        .updateData({
           'details': details,
           'date': date,
           'type_id': type,
           'position': rank,
         })
-        .then((ref) => _previousScores.add(newScoreList))
         .catchError((e) {
-          message = 'Event could not be added to user';
+          message = 'Event could not be updated';
         });
     return message;
   }
 
-  static bool isListInList(List<List> listOfLists, List list) {
-    for (List inList in listOfLists) {
-      bool allIn = true;
-      for (var item in list) {
-        allIn = allIn && inList.contains(item);
-      }
-      if (allIn) return true;
+  _onDelete() async {
+    _formKey.currentState.save();
+    bool didDelete = await showDialog(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Score?'),
+          content: SingleChildScrollView(
+            child: Text('Choosing delete will permanently delete the score you are editing')
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Cancel', style: new TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+            ),
+            FlatButton(
+              child: Text('Delete', style: new TextStyle(color: Colors.white)),
+              onPressed: () async {
+                var snackMessage = await _deleteScore();
+                _scaffoldKey.currentState
+                    .showSnackBar(SnackBar(content: Text(snackMessage)));
+                Navigator.of(context).pop(snackMessage?.contains(_userName));
+              },
+            ),
+          ],
+        );
+      },
+    );
+    if (didDelete) {
+      Navigator.of(context).pop();
     }
-    return false;
+  }
+
+  _deleteScore() async {
+    String message = 'Score deleted for ' + _userName;
+    DocumentReference userRef = Firestore.instance
+        .collection('users').document(_userId);
+    DocumentReference scoreRef = userRef
+        .collection('scores').document(_scoreId);
+    await Firestore.instance.runTransaction((Transaction tx) async {
+      DocumentSnapshot postSnapshot = await tx.get(userRef);
+      if (postSnapshot.exists) {
+        await tx.update(userRef, <String, dynamic>{
+          'score': postSnapshot.data['score'] - _oScore
+        });
+      }
+      await tx.delete(scoreRef);
+    }).catchError((e) => message = 'Score not deleted');
+    return message;
   }
 
   @override
@@ -141,52 +188,12 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
       appBar: new AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: new Text("Add Scores"),
+        title: new Text("Edit Score"),
       ),
       body: Form(
         key: _formKey,
         child: Column(
           children: <Widget>[
-            new ListTile(
-              leading: const Icon(Icons.person),
-              title: TypeAheadFormField(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: this._nameSelectController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    hintText: 'Ryan Arnold',
-                    labelText: 'Member Name',
-                    labelStyle: TextStyle(color: Colors.white),
-                    focusedBorder: UnderlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide: BorderSide(color: Colors.white),
-                    ),
-                  ),
-                  focusNode: _focusNode,
-                ),
-                getImmediateSuggestions: false,
-                suggestionsCallback: _getUsersThatIncludePattern,
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(suggestion.data['name']),
-                  );
-                },
-                transitionBuilder: (context, suggestionsBox, controller) {
-                  return suggestionsBox;
-                },
-                onSuggestionSelected: (suggestion) {
-                  this._nameSelectController.text = suggestion.data['name'];
-                  this._userName = suggestion.data['name'];
-                  this._userId = suggestion.documentID;
-                },
-                validator: (value) {
-                  if (value.isEmpty || this._userId.isEmpty) {
-                    return 'Please select a valid member name';
-                  }
-                },
-                onSaved: _setUserIdIfEmpty,
-              ),
-            ),
             new ListTile(
               leading: const Icon(Icons.event),
               title: DateTimePickerFormField(
@@ -199,6 +206,7 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
                   ),
                 ),
                 dateOnly: true,
+                initialValue: _oDate,
                 format: _dateFormat,
                 onChanged: (dt) => setState(() => _date = dt),
                 validator: (value) {
@@ -211,9 +219,11 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
             new ListTile(
               leading: const Icon(Icons.event_seat),
               title: new FireDropdownButton(
+                key: _dropdownKey,
                 collection: 'event-type',
                 prettyField: 'name',
                 orderField: 'score_adder',
+                initialValue: _oType,
                 validator: (value) {
                   if (value == null) {
                     return 'Please select an event type';
@@ -277,7 +287,14 @@ class _AddScoreScreenState extends State<AddScoresScreen> {
               child: RaisedButton(
                 color: Theme.of(context).accentColor,
                 onPressed: _onFormSubmit,
-                child: Text('Add'),
+                child: Text('Update'),
+              ),
+            ),
+            Container(
+              child: RaisedButton(
+                color: Theme.of(context).accentColor,
+                onPressed: _onDelete,
+                child: Text('Delete'),
               ),
             ),
           ],

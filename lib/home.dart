@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _bottomNavKey = GlobalKey<BottomNavBarState>();
   final _titleOptions = <String>[
-    '',
+    'Welcome',
     'Leaderboard',
     'Event Types',
   ];
